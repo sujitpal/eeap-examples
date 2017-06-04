@@ -1,4 +1,4 @@
-# e3p-docsim-example
+# eeap-reuters-docsim-example
 
 An example of applying the [Embed, Encode, Attend, Predict (EEAP)](https://explosion.ai/blog/deep-learning-formula-nlp) formula for Deep Learning NLP models proposed by Matthew Honnibal, creator of the [SpaCy](https://spacy.io/) deep learning toolkit. Our example is to predict document similarity between documents in the [Reuters-21578 corpus](https://archive.ics.uci.edu/ml/datasets/Reuters-21578+Text+Categorization+Collection).
 
