@@ -54,7 +54,8 @@ class AttentionM(Layer):
         if mask is not None:
             alpha *= K.cast(mask, K.floatx())
         # output: (BATCH_SIZE, EMBED_SIZE)
-        return K.batch_dot(K.permute_dimensions(x, (0, 2, 1)), alpha)
+        alpha_emb = K.expand_dims(alpha, axis=-1)
+        return K.sum(x * alpha_emb, axis=1)
 
     
     def compute_mask(self, input, input_mask=None):
