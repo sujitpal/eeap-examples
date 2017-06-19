@@ -38,7 +38,8 @@ def test_attention_m1(batch_size, word_embed_size, sent_embed_size,
 
     model = Model(inputs=sent_inputs, outputs=sent_pred)
     model.compile(loss="categorical_crossentropy", optimizer="adam")
-    return model.summary()
+    model.summary()
+    return model
 
 
 def test_attention_m2(batch_size, word_embed_size, sent_embed_size,
@@ -78,7 +79,8 @@ def test_attention_m2(batch_size, word_embed_size, sent_embed_size,
 
     model = Model(inputs=doc_inputs, outputs=doc_pred)
     model.compile(loss="categorical_crossentropy", optimizer="adam")
-    return model.summary()
+    model.summary()
+    return model
 
 
 def test_attention_mv1(batch_size, word_embed_size, sent_embed_size,
@@ -104,7 +106,8 @@ def test_attention_mv1(batch_size, word_embed_size, sent_embed_size,
     
     model = Model(inputs=sent_inputs, outputs=sent_pred)
     model.compile(loss="categorical_crossentropy", optimizer="adam")
-    return model.summary()
+    model.summary()
+    return model
 
 
 def test_attention_mv2(batch_size, word_embed_size, sent_embed_size,
@@ -133,7 +136,8 @@ def test_attention_mv2(batch_size, word_embed_size, sent_embed_size,
 
     model = Model(inputs=sent_inputs, outputs=sent_pred)
     model.compile(loss="categorical_crossentropy", optimizer="adam")
-    return model.summary()
+    model.summary()
+    return model
 
 
 def test_attention_mv3(batch_size, word_embed_size, sent_embed_size,
@@ -173,7 +177,8 @@ def test_attention_mv3(batch_size, word_embed_size, sent_embed_size,
 
     model = Model(inputs=doc_inputs, outputs=doc_pred)
     model.compile(loss="categorical_crossentropy", optimizer="adam")
-    return model.summary()
+    model.summary()
+    return model
 
 
 def test_attention_mv4(batch_size, word_embed_size, sent_embed_size,
@@ -214,7 +219,9 @@ def test_attention_mv4(batch_size, word_embed_size, sent_embed_size,
 
     model = Model(inputs=doc_inputs, outputs=doc_pred)
     model.compile(loss="categorical_crossentropy", optimizer="adam")
-    return model.summary()
+    model.summary()
+    return model
+
 
 def test_attention_mm1(batch_size, word_embed_size, sent_embed_size,
                        doc_embed_size, vocab_size, max_words, max_sents,
@@ -275,11 +282,10 @@ def test_attention_mm1(batch_size, word_embed_size, sent_embed_size,
 
     model = Model(inputs=[doc_in_left, doc_in_right], outputs=doc_pred)
     model.compile(loss="categorical_crossentropy", optimizer="adam")
-    return model.summary()
+    model.summary()
+    return model
 
 
-
-    
 def run_tests():
 
     BATCH_SIZE = 32
@@ -295,36 +301,36 @@ def run_tests():
     MAX_SENTS = 40
 
     print(test_attention_m1.__doc__)
-    print(test_attention_m1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, NUM_CLASSES,
-                           MAX_WORDS, VOCAB_SIZE))
+    test_attention_m1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
+                      NUM_CLASSES, MAX_WORDS, VOCAB_SIZE)
     
     print(test_attention_m2.__doc__)
-    print(test_attention_m2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
-                     DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
-                     NUM_CLASSES))
+    test_attention_m2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
+                      DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
+                      NUM_CLASSES)
 
     print(test_attention_mv1.__doc__)
-    print(test_attention_mv1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, NUM_CLASSES,
-                            MAX_WORDS, VOCAB_SIZE))
+    test_attention_mv1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
+                       NUM_CLASSES, MAX_WORDS, VOCAB_SIZE)
 
     print(test_attention_mv2.__doc__)
-    print(test_attention_mv2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, NUM_CLASSES,
-                            MAX_WORDS, VOCAB_SIZE))
+    test_attention_mv2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
+                       NUM_CLASSES, MAX_WORDS, VOCAB_SIZE)
 
     print(test_attention_mv3.__doc__)
-    print(test_attention_mv3(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
-                             DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
-                             NUM_CLASSES))
+    test_attention_mv3(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
+                       DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
+                       NUM_CLASSES)
 
     print(test_attention_mv4.__doc__)
-    print(test_attention_mv4(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
-                             DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
-                             NUM_CLASSES))
+    test_attention_mv4(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
+                       DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
+                       NUM_CLASSES)
 
     print(test_attention_mm1.__doc__)
-    print(test_attention_mm1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
-                             DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
-                             NUM_CLASSES))
+    test_attention_mm1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
+                       DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
+                       NUM_CLASSES)
 
 
 if __name__ == "__main__":
