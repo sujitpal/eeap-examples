@@ -27,8 +27,8 @@ class AttentionM(Layer):
 
     
     def build(self, input_shape):
-        # W: (BATCH_SIZE, EMBED_SIZE, 1)
-        # b: (BATCH_SIZE, MAX_TIMESTEPS, 2)
+        # W: (EMBED_SIZE, 1)
+        # b: (MAX_TIMESTEPS,)
         self.W = self.add_weight(name="W_{:s}".format(self.name), 
                                  shape=(input_shape[-1], 1),
                                  initializer="normal")
@@ -40,8 +40,10 @@ class AttentionM(Layer):
 
     def call(self, x, mask=None):
         # input: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
+        # ht: (BATCH_SIZE, MAX_TIMESTEPS)
         # alpha: (BATCH_SIZE, MAX_TIMESTEPS)
         ht = K.tanh(K.squeeze(K.dot(x, self.W), 2) + self.b)
+        # at: (BATCH_SIZE, MAX_TIMESTEPS)
         at = K.softmax(ht)
         if mask is not None:
             at *= K.cast(mask, K.floatx())
@@ -100,46 +102,45 @@ class AttentionMV(Layer):
             self.generate_vector = True
             embed_size = input_shape[-1]
             
-        # W: (BATCH_SIZE, EMBED_SIZE, EMBED_SIZE)
-        # b: (BATCH_SIZE, EMBED_SIZE)
+        # W: (EMBED_SIZE, EMBED_SIZE)
+        # b: (1, EMBED_SIZE)
         self.W = self.add_weight(name="W_{:s}".format(self.name),
                                  shape=(embed_size, embed_size),
                                  initializer="normal")
         self.b = self.add_weight(name="b_{:s}".format(self.name),
-                                 shape=(embed_size,),
+                                 shape=(1, embed_size),
                                  initializer="zeros")
-
         if self.generate_vector:
-            # u: (BATCH_SIZE, EMBED_SIZE, 1)
+            # u: (EMBED_SIZE,)
             self.u = self.add_weight(name="u_{:s}".format(self.name),
-                                     shape=(input_shape[-1], 1),
+                                     shape=(embed_size,),
                                      initializer="normal")
-            
         super(AttentionMV, self).build(input_shape)
 
 
     def call(self, xs, mask=None):
-        # input: (BATCH_SIZE, MAX_TIMESTEPS(+1), EMBED_SIZE)
+        # input: [(BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE), 
+        #         {(BATCH_SIZE, EMBED_SIZE)*}]
         if self.generate_vector:
             x = xs[0]
         else:
-            x, self.u = xs
+            x, v = xs
+            self.u = K.mean(v, axis=0)
             if type(mask) is list:
                 mask = mask[0]
         # x: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
-        # u: (BATCH_SIZE, EMBED_SIZE)
+        # u: (EMBED_SIZE,)
         # ht: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         ht = K.tanh(K.dot(x, self.W) + self.b)
-        # at: (BATCH_SIZE, MAX_TIMESTEPS)
-        at = K.softmax(K.dot(ht, self.u))
+        # h: (EMBED_SIZE, MAX_TIMESTEPS)
+        h = K.repeat_elements(K.expand_dims(self.u, axis=1), 
+                              ht.shape[1], axis=1)
+        # at: (BATCH_SIZE, MAX_TIMESTEPS, MAX_TIMESTEPS)
+        at = K.softmax(K.dot(ht, h))
         if mask is not None:
             at *= K.cast(mask, K.floatx())
-        # atx: (BATCH_SIZE, MAX_TIMESTEPS, eEMBED_SIZE)
         # ot: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
-        atx = K.expand_dims(at, axis=-1)
-        ot = x * atx
-        # output: (BATCH_SIZE, EMBED_SIZE)
-        return K.sum(ot, axis=1)
+        return K.sum(K.batch_dot(at, ht), axis=1)
 
 
     def compute_mask(self, input, input_mask=None):
@@ -153,7 +154,6 @@ class AttentionMV(Layer):
             return (input_shape[0], input_shape[-1])
         else:
             return (input_shape[0][0], input_shape[0][-1])
-
 
 
 class AttentionMM(Layer):
@@ -190,10 +190,10 @@ class AttentionMM(Layer):
     def build(self, input_shape):
         assert type(input_shape) is list and len(input_shape) == 2
         assert input_shape[0] == input_shape[1]
-        # W1: (BATCH_SIZE, EMBED_SIZE, 1)
-        # b1: (BATCH_SIZE, MAX_TIMESTEPS)
-        # W2: (BATCH_SIZE, EMBED_SIZE, 1)
-        # b2: (BATCH_SIZE, MAX_TIMESTEPS)
+        # W1: (EMBED_SIZE, 1)
+        # b1: (MAX_TIMESTEPS,)
+        # W2: (EMBED_SIZE, 1)
+        # b2: (MAX_TIMESTEPS,)
         self.W1 = self.add_weight(name="W1_{:s}".format(self.name),
                                   shape=(input_shape[0][-1], 1),
                                   initializer="normal")
@@ -206,6 +206,10 @@ class AttentionMM(Layer):
         self.b2 = self.add_weight(name="b2_{:s}".format(self.name),
                                   shape=(input_shape[1][1],),
                                   initializer="zeros")
+        print("W1", self.W1)
+        print("b1", self.b1)
+        print("W2", self.W2)
+        print("b2", self.b2)
         super(AttentionMM, self).build(input_shape)
 
 
@@ -225,13 +229,13 @@ class AttentionMM(Layer):
         # at1: (BATCH_SIZE, MAX_TIMESTEPS)
         # at2: (BATCH_SIZE, MAX_TIMESTEPS)
         at1 = K.softmax(K.batch_dot(ht2, align))
-#        if mask[0] is not None:
-#            at1 *= K.cast(mask[0], K.floatx())
+        if mask is not None and mask[0] is not None:
+            at1 *= K.cast(mask[0], K.floatx())
         at1 = K.sum(at1, axis=1)
         at2 = K.softmax(K.batch_dot(ht1, 
                 K.permute_dimensions(align, (0, 2, 1))))
-#        if mask[1] is not None:
-#            at2 *= K.cast(mask[1], K.floatx())
+        if mask is not None and mask[1] is not None:
+            at2 *= K.cast(mask[1], K.floatx())
         at2 = K.sum(at2, axis=1)
         # ot1: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         # ot2: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
@@ -268,3 +272,4 @@ class AttentionMM(Layer):
             # output shape: (BATCH_SIZE, EMBED_SIZE)
             return (input_shape[0][0], input_shape[0][2])
             
+
