@@ -132,15 +132,15 @@ class AttentionMV(Layer):
         # u: (EMBED_SIZE,)
         # ht: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         ht = K.tanh(K.dot(x, self.W) + self.b)
-        # h: (EMBED_SIZE, MAX_TIMESTEPS)
-        h = K.repeat_elements(K.expand_dims(self.u, axis=1), 
-                              ht.shape[1], axis=1)
         # at: (BATCH_SIZE, MAX_TIMESTEPS, MAX_TIMESTEPS)
-        at = K.softmax(K.dot(ht, h))
+        h = K.expand_dims(self.u, axis=-1)
+        at = K.squeeze(K.softmax(K.dot(ht, h)), axis=-1)
         if mask is not None:
             at *= K.cast(mask, K.floatx())
         # ot: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
-        return K.sum(K.batch_dot(at, ht), axis=1)
+        atx = K.expand_dims(at, axis=-1)
+        ot = atx * ht
+        return K.sum(ot, axis=1)
 
 
     def compute_mask(self, input, input_mask=None):
