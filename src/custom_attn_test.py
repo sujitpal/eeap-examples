@@ -153,16 +153,16 @@ def test_attention_mv3(batch_size, word_embed_size, sent_embed_size,
                          output_dim=word_embed_size,
                          mask_zero=True,
                          weights=[E])(sent_inputs)
-#    sent_enc = Bidirectional(GRU(sent_embed_size,
-#                                 return_sequences=True))(sent_emb)
-#
-#    sent_att = custom_attn.AttentionMV()([sent_enc])
-#
-#    sent_model = Model(inputs=sent_inputs, outputs=sent_att)
-
     sent_enc = Bidirectional(GRU(sent_embed_size,
-                                 return_sequences=False))(sent_emb)
-    sent_model = Model(inputs=sent_inputs, outputs=sent_enc)
+                                 return_sequences=True))(sent_emb)
+
+    sent_att = custom_attn.AttentionMV()([sent_enc])
+
+    sent_model = Model(inputs=sent_inputs, outputs=sent_att)
+
+#    sent_enc = Bidirectional(GRU(sent_embed_size,
+#                                 return_sequences=False))(sent_emb)
+#    sent_model = Model(inputs=sent_inputs, outputs=sent_enc)
 
     
     # document pipeline    
@@ -198,17 +198,17 @@ def test_attention_mv4(batch_size, word_embed_size, sent_embed_size,
     sent_emb = Embedding(input_dim=vocab_size,
                          output_dim=word_embed_size,
                          weights=[E])(sent_inputs)
-#    sent_enc = Bidirectional(GRU(sent_embed_size,
-#                                 return_sequences=True))(sent_emb)
-#
-#    sent_vec = GlobalAveragePooling1D()(sent_enc)
-#    sent_att = custom_attn.AttentionMV()([sent_enc, sent_vec])
-#
-#    sent_model = Model(inputs=sent_inputs, outputs=sent_att)
-
     sent_enc = Bidirectional(GRU(sent_embed_size,
-                                 return_sequences=False))(sent_emb)
-    sent_model = Model(inputs=sent_inputs, outputs=sent_enc)
+                                 return_sequences=True))(sent_emb)
+
+    sent_vec = GlobalAveragePooling1D()(sent_enc)
+    sent_att = custom_attn.AttentionMV()([sent_enc, sent_vec])
+
+    sent_model = Model(inputs=sent_inputs, outputs=sent_att)
+
+#    sent_enc = Bidirectional(GRU(sent_embed_size,
+#                                 return_sequences=False))(sent_emb)
+#    sent_model = Model(inputs=sent_inputs, outputs=sent_enc)
     
     # document pipeline
     doc_inputs = Input(shape=(max_sents, max_words), dtype="int32")
