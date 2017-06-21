@@ -62,14 +62,81 @@ class AttentionM(Layer):
     
     def compute_output_shape(self, input_shape):
         return (input_shape[0], input_shape[-1])
+
+
+class AttentionMC(Layer):
+    
+    """
+    Keras layer to compute an attention vector on an incoming matrix
+    using a learned context vector.
+    
+    # Input
+        enc - 3D Tensor of shape (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         
+    # Output
+        2D Tensor of shape (BATCH_SIZE, EMBED_SIZE)
+
+    # Usage
+        enc = Bidirectional(GRU(EMBED_SIZE,return_sequences=True))(...)
+        att = AttentionMC()(enc)
+    
+    """
+    
+    def __init__(self, **kwargs):
+        super(AttentionMC, self).__init__(**kwargs)
+
+        
+    def build(self, input_shape):
+        self.generate_vector = True
+        embed_size = input_shape[-1]
+            
+        # W: (EMBED_SIZE, EMBED_SIZE)
+        # b: (1, EMBED_SIZE)
+        # u: (EMBED_SIZE,)
+        self.W = self.add_weight(name="W_{:s}".format(self.name),
+                                 shape=(embed_size, embed_size),
+                                 initializer="normal")
+        self.b = self.add_weight(name="b_{:s}".format(self.name),
+                                 shape=(1, embed_size),
+                                 initializer="zeros")
+        self.u = self.add_weight(name="u_{:s}".format(self.name),
+                                 shape=(embed_size,),
+                                 initializer="normal")
+        super(AttentionMC, self).build(input_shape)
+
+
+    def call(self, x, mask=None):
+        # input: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
+        # x: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
+        # u: (EMBED_SIZE,)
+        # ht: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
+        ht = K.tanh(K.dot(x, self.W) + self.b)
+        # at: (BATCH_SIZE, MAX_TIMESTEPS, MAX_TIMESTEPS)
+        h = K.expand_dims(self.u, axis=-1)
+        at = K.squeeze(K.softmax(K.dot(ht, h)), axis=-1)
+        if mask is not None:
+            at *= K.cast(mask, K.floatx())
+        # ot: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
+        atx = K.expand_dims(at, axis=-1)
+        ot = atx * ht
+        return K.sum(ot, axis=1)
+
+
+    def compute_mask(self, input, input_mask=None):
+        # do not pass the mask to the next layers
+        return None
+
+
+    def compute_output_shape(self, input_shape):
+        # output shape: (BATCH_SIZE, EMBED_SIZE)
+        return (input_shape[0], input_shape[-1])
+
 
 class AttentionMV(Layer):
     
     """
     Keras layer to compute an attention vector on an incoming matrix
-    and a context vector. Context vector is optional, if supplied it 
-    will be used, otherwise a context vector will be generated.
+    and a user provided context vector.
     
     # Input
         enc - 3D Tensor of shape (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
@@ -84,9 +151,6 @@ class AttentionMV(Layer):
         # with user supplied vector
         ctx = GlobalAveragePooling1D()(enc)
         att = AttentionMV()([enc, ctx])
-        
-        # without user supplied vector
-        att = AttentionMV()([enc])
     
     """
     
@@ -95,6 +159,9 @@ class AttentionMV(Layer):
 
         
     def build(self, input_shape):
+        assert type(input_shape) is list and len(input_shape) == 2
+        embed_size = input_shape[0][-1]
+        
         if type(input_shape) is list:
             self.generate_vector = False
             embed_size = input_shape[0][-1]
@@ -110,36 +177,25 @@ class AttentionMV(Layer):
         self.b = self.add_weight(name="b_{:s}".format(self.name),
                                  shape=(1, embed_size),
                                  initializer="zeros")
-        if self.generate_vector:
-            # u: (EMBED_SIZE,)
-            self.u = self.add_weight(name="u_{:s}".format(self.name),
-                                     shape=(embed_size,),
-                                     initializer="normal")
         super(AttentionMV, self).build(input_shape)
 
 
     def call(self, xs, mask=None):
         # input: [(BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE), 
-        #         {(BATCH_SIZE, EMBED_SIZE)*}]
-        if self.generate_vector:
-            x = xs[0]
-        else:
-            x, v = xs
-            self.u = K.mean(v, axis=0)
-            if type(mask) is list:
-                mask = mask[0]
+        #         (BATCH_SIZE, EMBED_SIZE)]
+        x, u = xs
         # x: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
-        # u: (EMBED_SIZE,)
+        # u: (BATCH_SIZE, EMBED_SIZE)
         # ht: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         ht = K.tanh(K.dot(x, self.W) + self.b)
-        # at: (BATCH_SIZE, MAX_TIMESTEPS, MAX_TIMESTEPS)
-        h = K.expand_dims(self.u, axis=-1)
-        at = K.squeeze(K.softmax(K.dot(ht, h)), axis=-1)
-        if mask is not None:
+        # at: (BATCH_SIZE, MAX_TIMESTEPS)
+        at = K.softmax(K.batch_dot(u, ht, axes=(1, 2)))
+        if mask is not None and mask[0] is not None:
             at *= K.cast(mask, K.floatx())
         # ot: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         atx = K.expand_dims(at, axis=-1)
         ot = atx * ht
+        # output: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         return K.sum(ot, axis=1)
 
 
@@ -206,10 +262,6 @@ class AttentionMM(Layer):
         self.b2 = self.add_weight(name="b2_{:s}".format(self.name),
                                   shape=(input_shape[1][1],),
                                   initializer="zeros")
-        print("W1", self.W1)
-        print("b1", self.b1)
-        print("W2", self.W2)
-        print("b2", self.b2)
         super(AttentionMM, self).build(input_shape)
 
 
