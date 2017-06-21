@@ -8,6 +8,7 @@ from keras.layers.embeddings import Embedding
 from keras.layers.pooling import GlobalAveragePooling1D
 from keras.layers.recurrent import GRU
 from keras.layers.wrappers import Bidirectional, TimeDistributed
+from keras.utils import np_utils
 import numpy as np
 
 import custom_attn
@@ -16,8 +17,8 @@ import custom_attn
 ###############################################################################
 
 def test_attention_m1(batch_size, word_embed_size, sent_embed_size,
-                      num_classes, max_words, vocab_size):
-    """ model summary (matrix attention) -- sentence only """
+                      num_classes, max_words, vocab_size, should_fit_model):
+    """ AttentionM: sentence only """
 
     E = np.random.random((vocab_size, word_embed_size))
 
@@ -37,15 +38,22 @@ def test_attention_m1(batch_size, word_embed_size, sent_embed_size,
     sent_pred = Dense(num_classes, activation="softmax")(fc2_dropout)
 
     model = Model(inputs=sent_inputs, outputs=sent_pred)
-    model.compile(loss="categorical_crossentropy", optimizer="adam")
     model.summary()
-    return model
+    
+    if should_fit_model:
+        X = np.random.random((batch_size*2, max_words))
+        y = np.random.randint(0, num_classes, batch_size*2)
+        Y = np_utils.to_categorical(y, num_classes=num_classes)
+        model.compile(optimizer="adam", loss="categorical_crossentropy")
+        model.fit(X, Y, batch_size=batch_size, epochs=1)
+    
+    return
 
 
 def test_attention_m2(batch_size, word_embed_size, sent_embed_size,
                      doc_embed_size, vocab_size, max_words, max_sents,
-                     num_classes):
-    """ model summary (matrix attention) -- full """
+                     num_classes, should_fit_model):
+    """ AttentionM: full """
 
     # sentence encoder
     E = np.random.random((vocab_size, word_embed_size))
@@ -78,14 +86,21 @@ def test_attention_m2(batch_size, word_embed_size, sent_embed_size,
     doc_pred = Dense(num_classes, activation="softmax")(fc2_dropout)
 
     model = Model(inputs=doc_inputs, outputs=doc_pred)
-    model.compile(loss="categorical_crossentropy", optimizer="adam")
     model.summary()
-    return model
+    
+    if should_fit_model:
+        X = np.random.random((batch_size*2, max_sents, max_words))
+        y = np.random.randint(0, num_classes, batch_size*2)
+        Y = np_utils.to_categorical(y, num_classes=num_classes)
+        model.compile(optimizer="adam", loss="categorical_crossentropy")
+        model.fit(X, Y, batch_size=batch_size, epochs=1)
+    
+    return
 
 
 def test_attention_mc1(batch_size, word_embed_size, sent_embed_size,
-                      num_classes, max_words, vocab_size):
-    """ model summary (matrix-vector attention) -- sentence only, w/o query """
+                      num_classes, max_words, vocab_size, should_fit_model):
+    """ AttentionMC: sentence only """
 
     E = np.random.random((vocab_size, word_embed_size))
 
@@ -105,15 +120,22 @@ def test_attention_mc1(batch_size, word_embed_size, sent_embed_size,
     sent_pred = Dense(num_classes, activation="softmax")(fc2_dropout)
     
     model = Model(inputs=sent_inputs, outputs=sent_pred)
-    model.compile(loss="categorical_crossentropy", optimizer="adam")
     model.summary()
-    return model
+    
+    if should_fit_model:
+        X = np.random.random((batch_size*2, max_words))
+        y = np.random.randint(0, num_classes, batch_size*2)
+        Y = np_utils.to_categorical(y, num_classes=num_classes)
+        model.compile(optimizer="adam", loss="categorical_crossentropy")
+        model.fit(X, Y, batch_size=batch_size, epochs=1)
+
+    return
 
 
 def test_attention_mc2(batch_size, word_embed_size, sent_embed_size,
                        doc_embed_size, vocab_size, max_words, max_sents,
-                       num_classes):
-    """ model summary (matrix-vector attention) -- full, w/o query """
+                       num_classes, should_fit_model):
+    """ AttentionMC: full """
 
     # sentence encoder
     E = np.random.random((vocab_size, word_embed_size))
@@ -151,15 +173,22 @@ def test_attention_mc2(batch_size, word_embed_size, sent_embed_size,
     doc_pred = Dense(num_classes, activation="softmax")(fc2_dropout)
 
     model = Model(inputs=doc_inputs, outputs=doc_pred)
-    model.compile(loss="categorical_crossentropy", optimizer="adam")
     model.summary()
-    return model
+    
+    if should_fit_model:
+        X = np.random.random((batch_size*2, max_sents, max_words))
+        y = np.random.randint(0, num_classes, batch_size*2)
+        Y = np_utils.to_categorical(y, num_classes=num_classes)
+        model.compile(optimizer="adam", loss="categorical_crossentropy")
+        model.fit(X, Y, batch_size=batch_size, epochs=1)
+
+    return
 
 
 def test_attention_mv1(batch_size, word_embed_size, sent_embed_size,
-                      num_classes, max_words, vocab_size):
+                      num_classes, max_words, vocab_size, should_fit_model):
 
-    """ model summary (matrix-vector attention) -- sentence only, w/ query """
+    """ AttentionMV: sentence only """
 
     E = np.random.random((vocab_size, word_embed_size))
 
@@ -181,15 +210,22 @@ def test_attention_mv1(batch_size, word_embed_size, sent_embed_size,
     sent_pred = Dense(num_classes, activation="softmax")(fc2_dropout)
 
     model = Model(inputs=sent_inputs, outputs=sent_pred)
-    model.compile(loss="categorical_crossentropy", optimizer="adam")
     model.summary()
-    return model
+    
+    if should_fit_model:
+        X = np.random.random((batch_size*2, max_words))
+        y = np.random.randint(0, num_classes, batch_size*2)
+        Y = np_utils.to_categorical(y, num_classes=num_classes)
+        model.compile(optimizer="adam", loss="categorical_crossentropy")
+        model.fit(X, Y, batch_size=batch_size, epochs=1)
+
+    return
 
 
 def test_attention_mv2(batch_size, word_embed_size, sent_embed_size,
                        doc_embed_size, vocab_size, max_words, max_sents,
-                       num_classes):
-    """ model summary (matrix-vector attention) -- full, w/ query """
+                       num_classes, should_fit_model):
+    """ AttentionMV: full """
 
     # sentence encoder
     E = np.random.random((vocab_size, word_embed_size))
@@ -227,15 +263,22 @@ def test_attention_mv2(batch_size, word_embed_size, sent_embed_size,
     doc_pred = Dense(num_classes, activation="softmax")(fc2_dropout)
 
     model = Model(inputs=doc_inputs, outputs=doc_pred)
-    model.compile(loss="categorical_crossentropy", optimizer="adam")
     model.summary()
-    return model
+    
+    if should_fit_model:
+        X = np.random.random((batch_size*2, max_sents, max_words))
+        y = np.random.randint(0, num_classes, batch_size*2)
+        Y = np_utils.to_categorical(y, num_classes=num_classes)
+        model.compile(optimizer="adam", loss="categorical_crossentropy")
+        model.fit(X, Y, batch_size=batch_size, epochs=1)
+
+    return
 
 
 def test_attention_mm1(batch_size, word_embed_size, sent_embed_size,
                        doc_embed_size, vocab_size, max_words, max_sents,
-                       num_classes):
-    """ model summary (matrix-matrix attention), similarity network """
+                       num_classes, should_fit_model):
+    """ AttentionMM """
 
     def sum_over_axis(X, axis):
         return K.mean(X, axis=axis)
@@ -290,9 +333,17 @@ def test_attention_mm1(batch_size, word_embed_size, sent_embed_size,
     doc_pred = Dense(num_classes, activation="softmax")(fc2_dropout)
 
     model = Model(inputs=[doc_in_left, doc_in_right], outputs=doc_pred)
-    model.compile(loss="categorical_crossentropy", optimizer="adam")
     model.summary()
-    return model
+    
+    if should_fit_model:
+        Xleft = np.random.random((batch_size*2, max_sents, max_words))
+        Xright = np.random.random((batch_size*2, max_sents, max_words))
+        y = np.random.randint(0, num_classes, batch_size*2)
+        Y = np_utils.to_categorical(y, num_classes=num_classes)
+        model.compile(optimizer="adam", loss="categorical_crossentropy")
+        model.fit([Xleft, Xright], Y, batch_size=batch_size, epochs=1)
+
+    return
 
 
 def run_tests():
@@ -308,38 +359,42 @@ def run_tests():
     NUM_CLASSES = 20
     MAX_WORDS = 60
     MAX_SENTS = 40
+    
+    # turn this on to run the models (takes a bit of time but safer
+    # than finding out that the model doesn't work in your notebook)
+    SHOULD_FIT_MODEL = True
 
     print(test_attention_m1.__doc__)
     test_attention_m1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
-                      NUM_CLASSES, MAX_WORDS, VOCAB_SIZE)
+                      NUM_CLASSES, MAX_WORDS, VOCAB_SIZE, SHOULD_FIT_MODEL)
     
     print(test_attention_m2.__doc__)
     test_attention_m2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
                       DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
-                      NUM_CLASSES)
+                      NUM_CLASSES, SHOULD_FIT_MODEL)
 
     print(test_attention_mc1.__doc__)
     test_attention_mc1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
-                       NUM_CLASSES, MAX_WORDS, VOCAB_SIZE)
+                       NUM_CLASSES, MAX_WORDS, VOCAB_SIZE, SHOULD_FIT_MODEL)
 
     print(test_attention_mc2.__doc__)
     test_attention_mc2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
                        DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
-                       NUM_CLASSES)
+                       NUM_CLASSES, SHOULD_FIT_MODEL)
 
     print(test_attention_mv1.__doc__)
     test_attention_mv1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
-                       NUM_CLASSES, MAX_WORDS, VOCAB_SIZE)
+                       NUM_CLASSES, MAX_WORDS, VOCAB_SIZE, SHOULD_FIT_MODEL)
 
     print(test_attention_mv2.__doc__)
     test_attention_mv2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
                        DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
-                       NUM_CLASSES)
+                       NUM_CLASSES, SHOULD_FIT_MODEL)
 
     print(test_attention_mm1.__doc__)
     test_attention_mm1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
                        DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
-                       NUM_CLASSES)
+                       2, SHOULD_FIT_MODEL)
 
 
 if __name__ == "__main__":
