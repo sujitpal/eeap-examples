@@ -49,6 +49,8 @@ doc_ids = set()
 fidl = open(IDLABELS_FILE, "wb")
 num_pos = 0
 for top_x, top_y in zip(top_xs, top_ys):
+    if np.random.uniform(0.0, 1.0, 1) > 0.2:
+        continue
     if num_pos % 1000 == 0:
         print("{:d} pairs written, pos ({:d}), neg(0)".format(num_pos, num_pos))
     label = LABELS["similar"]
@@ -62,6 +64,8 @@ for top_x, top_y in zip(top_xs, top_ys):
     num_pos += 1
 num_neg = 0
 for bot_x, bot_y in zip(bot_xs, bot_ys):
+    if np.random.uniform(0.0, 1.0, 1) > 0.2:
+        continue
     if num_neg % 1000 == 0:
         print("{:d} pairs written, pos({:d}), neg({:d})".format(
                 num_pos + num_neg, num_pos, num_neg))
