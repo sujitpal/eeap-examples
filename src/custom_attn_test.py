@@ -363,33 +363,34 @@ def run_tests():
     # turn this on to run the models (takes a bit of time but safer
     # than finding out that the model doesn't work in your notebook)
     SHOULD_FIT_MODEL = True
+#    SHOULD_FIT_MODEL = False
 
-    print(test_attention_m1.__doc__)
-    test_attention_m1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
-                      NUM_CLASSES, MAX_WORDS, VOCAB_SIZE, SHOULD_FIT_MODEL)
-    
-    print(test_attention_m2.__doc__)
-    test_attention_m2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
-                      DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
-                      NUM_CLASSES, SHOULD_FIT_MODEL)
-
-    print(test_attention_mc1.__doc__)
-    test_attention_mc1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
-                       NUM_CLASSES, MAX_WORDS, VOCAB_SIZE, SHOULD_FIT_MODEL)
-
-    print(test_attention_mc2.__doc__)
-    test_attention_mc2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
-                       DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
-                       NUM_CLASSES, SHOULD_FIT_MODEL)
-
-    print(test_attention_mv1.__doc__)
-    test_attention_mv1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
-                       NUM_CLASSES, MAX_WORDS, VOCAB_SIZE, SHOULD_FIT_MODEL)
-
-    print(test_attention_mv2.__doc__)
-    test_attention_mv2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
-                       DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
-                       NUM_CLASSES, SHOULD_FIT_MODEL)
+#    print(test_attention_m1.__doc__)
+#    test_attention_m1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
+#                      NUM_CLASSES, MAX_WORDS, VOCAB_SIZE, SHOULD_FIT_MODEL)
+#    
+#    print(test_attention_m2.__doc__)
+#    test_attention_m2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
+#                      DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
+#                      NUM_CLASSES, SHOULD_FIT_MODEL)
+#
+#    print(test_attention_mc1.__doc__)
+#    test_attention_mc1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
+#                       NUM_CLASSES, MAX_WORDS, VOCAB_SIZE, SHOULD_FIT_MODEL)
+#
+#    print(test_attention_mc2.__doc__)
+#    test_attention_mc2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
+#                       DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
+#                       NUM_CLASSES, SHOULD_FIT_MODEL)
+#
+#    print(test_attention_mv1.__doc__)
+#    test_attention_mv1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE, 
+#                       NUM_CLASSES, MAX_WORDS, VOCAB_SIZE, SHOULD_FIT_MODEL)
+#
+#    print(test_attention_mv2.__doc__)
+#    test_attention_mv2(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
+#                       DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
+#                       NUM_CLASSES, SHOULD_FIT_MODEL)
 
     print(test_attention_mm1.__doc__)
     test_attention_mm1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,

@@ -220,6 +220,7 @@ class AttentionMM(Layer):
         enc2 = LSTM(EMBED_SIZE, return_sequences=True)(...)
         
         att = AttentionMM("concat")([enc1, enc2])
+        att = BatchNormalization()(att)
 
     """
     
@@ -242,29 +243,31 @@ class AttentionMM(Layer):
         # b4: (MAX_TIMESTEPS, EMBED_SIZE)
         # U1: (EMBED_SIZE, MAX_TIMESTEPS)
         # U2: (EMBED_SIZE, MAX_TIMESTEPS)
+        self.embed_size = input_shape[0][-1]
+        self.max_timesteps = input_shape[0][1]
         self.W1 = self.add_weight(name="W1_{:s}".format(self.name),
-                                  shape=(input_shape[0][-1], 1),
+                                  shape=(self.embed_size, self.embed_size),
                                   initializer="normal")
         self.b1 = self.add_weight(name="b1_{:s}".format(self.name),
-                                  shape=(input_shape[0][1], 1),
+                                  shape=(self.max_timesteps, self.embed_size),
                                   initializer="zeros")
         self.W2 = self.add_weight(name="W2_{:s}".format(self.name),
-                                  shape=(input_shape[1][-1], 1),
+                                  shape=(self.embed_size, self.embed_size),
                                   initializer="normal")
         self.b2 = self.add_weight(name="b2_{:s}".format(self.name),
-                                  shape=(input_shape[1][1], 1),
+                                  shape=(self.max_timesteps, self.embed_size),
                                   initializer="zeros")
         self.U1 = self.add_weight(name="U1_{:s}".format(self.name), 
-                                  shape=(input_shape[0][-1], input_shape[0][1]),
+                                  shape=(self.embed_size, self.max_timesteps),
                                   initializer="normal")
         self.U2 = self.add_weight(name="U2_{:s}".format(self.name), 
-                                  shape=(input_shape[1][-1], input_shape[1][1]),
+                                  shape=(self.embed_size, self.max_timesteps),
                                   initializer="normal")
         self.V1 = self.add_weight(name="V1_{:s}".format(self.name),
-                                  shape=(input_shape[0][-1], input_shape[0][-1]),
+                                  shape=(self.embed_size, self.embed_size),
                                   initializer="normal")
         self.V2 = self.add_weight(name="V2_{:s}".format(self.name),
-                                  shape=(input_shape[1][-1], input_shape[1][-1]),
+                                  shape=(self.embed_size, self.embed_size),
                                   initializer="normal")
         super(AttentionMM, self).build(input_shape)
 
@@ -276,20 +279,33 @@ class AttentionMM(Layer):
         # x2.shape == (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         x1, x2 = xs
         # build alignment matrix 
-        # e1t, e2t: (BATCH_SIZE, MAX_TIMESTEPS, 1)
+        # e1t, e2t: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         # et: (BATCH_SIZE, MAX_TIMESTEPS, MAX_TIMESTEPS)
-        e1t = K.tanh(K.dot(x1, self.W1) + self.b1)
-        e2t = K.tanh(K.dot(x2, self.W2) + self.b2)
+        e1t = K.relu(K.dot(x1, self.W1) + self.b1)
+        e2t = K.relu(K.dot(x2, self.W2) + self.b2)
         et = K.softmax(K.batch_dot(e1t, e2t, axes=(2, 2)))
         # produce alignment matrices
-        # at1, at2: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
+        # a1t, a2t: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         a1t = K.batch_dot(et, x2, axes=(1, 1))
-        a2t = K.batch_dot(K.permute_dimensions(et, (0, 2, 1)), x1, axes=(1, 1))
+        a2t = K.batch_dot(et, x1, axes=(2, 1))
         # produce alignment vectors
-        # at1, at2: (BATCH_SIZE, EMBED_SIZE)
+        # a1, a2: (BATCH_SIZE, EMBED_SIZE)
         a1 = K.sum(a1t, axis=1)
         a2 = K.sum(a2t, axis=1)
-        # o1t, o2t: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
+        if mask is not None and mask[0] is not None:
+            a1 *= K.cast(mask, K.floatx())
+        if mask is not None and mask[1] is not None:
+            a1 *= K.cast(mask, K.floatx())
+#        # a1x, a2x: (BATCH_SIZE, EMBED_SIZE, 1)
+#        a1x = K.repeat_elements(K.expand_dims(a1, axis=1), self.max_timesteps, 
+#                                axis=1)
+#        a2x = K.repeat_elements(K.expand_dims(a2, axis=1), self.max_timesteps, 
+#                                axis=1)
+        # o1t, o2t: (BATCH_SIZE, MAX_TIMESTEPS*2, EMBED_SIZE)
+        # Parikh paper uses concatenation, but we can add more parameters
+        # using the weights as shown below
+#        o1t = K.concatenate((x1, a2x), axis=1)
+#        o2t = K.concatenate((x2, a1x), axis=1)
         o1t = K.expand_dims(K.dot(a1, self.U1), axis=-1) + K.dot(x1, self.V1)
         o2t = K.expand_dims(K.dot(a2, self.U2), axis=-1) + K.dot(x2, self.V2)
         # o1, o2: (BATCH_SIZE, EMBED_SIZE)
