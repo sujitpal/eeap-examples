@@ -236,23 +236,35 @@ class AttentionMM(Layer):
         # b1: (MAX_TIMESTEPS, 1)
         # W2: (EMBED_SIZE, 1)
         # b2: (MAX_TIMESTEPS, 1)
+        # W3: (EMBED_SIZE, EMBED_SIZE)
+        # b3: (MAX_TIMESTEPS, EMBED_SIZE)
+        # W4: (EMBED_SIZE, EMBED_SIZE)
+        # b4: (MAX_TIMESTEPS, EMBED_SIZE)
+        # U1: (EMBED_SIZE, MAX_TIMESTEPS)
+        # U2: (EMBED_SIZE, MAX_TIMESTEPS)
         self.W1 = self.add_weight(name="W1_{:s}".format(self.name),
                                   shape=(input_shape[0][-1], 1),
                                   initializer="normal")
         self.b1 = self.add_weight(name="b1_{:s}".format(self.name),
                                   shape=(input_shape[0][1], 1),
                                   initializer="zeros")
-        self.U1 = self.add_weight(name="U1_{:s}".format(self.name), 
-                                  shape=(input_shape[0][-1], input_shape[0][1]),
-                                  initializer="normal")
         self.W2 = self.add_weight(name="W2_{:s}".format(self.name),
                                   shape=(input_shape[1][-1], 1),
                                   initializer="normal")
         self.b2 = self.add_weight(name="b2_{:s}".format(self.name),
                                   shape=(input_shape[1][1], 1),
                                   initializer="zeros")
+        self.U1 = self.add_weight(name="U1_{:s}".format(self.name), 
+                                  shape=(input_shape[0][-1], input_shape[0][1]),
+                                  initializer="normal")
         self.U2 = self.add_weight(name="U2_{:s}".format(self.name), 
                                   shape=(input_shape[1][-1], input_shape[1][1]),
+                                  initializer="normal")
+        self.V1 = self.add_weight(name="V1_{:s}".format(self.name),
+                                  shape=(input_shape[0][-1], input_shape[0][-1]),
+                                  initializer="normal")
+        self.V2 = self.add_weight(name="V2_{:s}".format(self.name),
+                                  shape=(input_shape[1][-1], input_shape[1][-1]),
                                   initializer="normal")
         super(AttentionMM, self).build(input_shape)
 
@@ -264,35 +276,25 @@ class AttentionMM(Layer):
         # x2.shape == (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         x1, x2 = xs
         # build alignment matrix 
-        # S: (BATCH_SIZE, MAX_TIMESTEPS, MAX_TIMESTEPS)
-        S = K.batch_dot(x1, x2, axes=(2, 2))
-        # build context vectors
-        # c1: (BATCH_SIZE, EMBED_SIZE)
-        # c2: (BATCH_SIZE, EMBED_SIZE)
-        c1 = K.mean(K.batch_dot(S, x2, axes=(1, 1)), axis=1)
-        c2 = K.mean(K.batch_dot(K.permute_dimensions(S, (0, 2, 1)), 
-                                x1, axes=(1, 1)), axis=1)
-        # combine context with inputs
-        # et1: (BATCH_SIZE, MAX_TIMESTEPS)
-        # et2: (BATCH_SIZE, MAX_TIMESTEPS)
-        et1 = K.dot(c1, self.U1) + K.squeeze((K.dot(x1, self.W1) + self.b1), 
-                    axis=-1)
-        et2 = K.dot(c2, self.U2) + K.squeeze((K.dot(x2, self.W2) + self.b2), 
-                    axis=-1)
-        # at1: (BATCH_SIZE, MAX_TIMESTEPS)
-        # at2: (BATCH_SIZE, MAX_TIMESTEPS)
-        at1 = K.softmax(et1)
-        at2 = K.softmax(et2)
-        if mask is not None and mask[0] is not None:
-            at1 *= K.cast(mask[0], K.floatx())
-        if mask is not None and mask[1] is not None:
-            at2 *= K.cast(mask[1], K.floatx())
-        # o1: (BATCH_SIZE, EMBED_SIZE)
-        # o2: (BATCH_SIZE, EMBED_SIZE)
-        atx1 = K.expand_dims(at1, axis=-1)
-        atx2 = K.expand_dims(at2, axis=-1)
-        o1 = K.sum(x1 * atx1, axis=1)
-        o2 = K.sum(x2 * atx2, axis=1)
+        # e1t, e2t: (BATCH_SIZE, MAX_TIMESTEPS, 1)
+        # et: (BATCH_SIZE, MAX_TIMESTEPS, MAX_TIMESTEPS)
+        e1t = K.tanh(K.dot(x1, self.W1) + self.b1)
+        e2t = K.tanh(K.dot(x2, self.W2) + self.b2)
+        et = K.softmax(K.batch_dot(e1t, e2t, axes=(2, 2)))
+        # produce alignment matrices
+        # at1, at2: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
+        a1t = K.batch_dot(et, x2, axes=(1, 1))
+        a2t = K.batch_dot(K.permute_dimensions(et, (0, 2, 1)), x1, axes=(1, 1))
+        # produce alignment vectors
+        # at1, at2: (BATCH_SIZE, EMBED_SIZE)
+        a1 = K.sum(a1t, axis=1)
+        a2 = K.sum(a2t, axis=1)
+        # o1t, o2t: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
+        o1t = K.expand_dims(K.dot(a1, self.U1), axis=-1) + K.dot(x1, self.V1)
+        o2t = K.expand_dims(K.dot(a2, self.U2), axis=-1) + K.dot(x2, self.V2)
+        # o1, o2: (BATCH_SIZE, EMBED_SIZE)
+        o1 = K.sum(o1t, axis=1)
+        o2 = K.sum(o2t, axis=1)
         # merge the attention vectors according to merge_mode
         if self.merge_mode == "concat":
             return concatenate([o1, o2], axis=1)
