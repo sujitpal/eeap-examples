@@ -1,0 +1,7 @@
+\begin{align*}
+e_t &= tanh(Wh_t + b)
+\\
+\alpha_t &= softmax(e_t)
+\\
+o &= \sum_t \alpha_t h_t
+\end{align*}

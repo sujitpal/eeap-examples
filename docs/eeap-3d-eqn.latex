@@ -1,0 +1,21 @@
+\begin{align*}
+e_t^{(L)} &= tanh(W_1 h_t^{(L)} + b_1)
+\\
+e_t^{(R)} &= tanh(W_2 h_t^{(R)} + b_2)
+\\
+e_t &= e_t^{(L)} .e_t^{(R)}
+\\
+\\
+\alpha^{(L)} &= \sum_t softmax(e_t) . h_t^{(R)}
+\\
+\alpha^{(R)} &= \sum_t softmax(e_t) . h_1^{(L)}
+\\
+\\
+o^{(L)} &= \sum_t tanh(U_1 \alpha^{(L)} + V_1 h_t^{(L)})
+\\
+o^{(R)} &= \sum_t tanh(U_2 \alpha^{(R)} + V_2 h_t^{(R)})
+\\
+\\
+o &= concat(o^{(L)}, o^{(R)})
+\\
+\end{align*}
