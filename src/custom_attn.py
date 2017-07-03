@@ -258,10 +258,10 @@ class AttentionMM(Layer):
                                   shape=(self.max_timesteps, self.embed_size),
                                   initializer="zeros")
         self.U1 = self.add_weight(name="U1_{:s}".format(self.name), 
-                                  shape=(self.embed_size, self.max_timesteps),
+                                  shape=(self.embed_size, self.embed_size),
                                   initializer="normal")
         self.U2 = self.add_weight(name="U2_{:s}".format(self.name), 
-                                  shape=(self.embed_size, self.max_timesteps),
+                                  shape=(self.embed_size, self.embed_size),
                                   initializer="normal")
         self.V1 = self.add_weight(name="V1_{:s}".format(self.name),
                                   shape=(self.embed_size, self.embed_size),
@@ -269,6 +269,12 @@ class AttentionMM(Layer):
         self.V2 = self.add_weight(name="V2_{:s}".format(self.name),
                                   shape=(self.embed_size, self.embed_size),
                                   initializer="normal")
+        self.b3 = self.add_weight(name="b3_{:s}".format(self.name),
+                                  shape=(self.max_timesteps, self.embed_size),
+                                  initializer="zeros")
+        self.b4 = self.add_weight(name="b4_{:s}".format(self.name),
+                                  shape=(self.max_timesteps, self.embed_size),
+                                  initializer="zeros")
         super(AttentionMM, self).build(input_shape)
 
 
@@ -283,34 +289,22 @@ class AttentionMM(Layer):
         # et: (BATCH_SIZE, MAX_TIMESTEPS, MAX_TIMESTEPS)
         e1t = K.relu(K.dot(x1, self.W1) + self.b1)
         e2t = K.relu(K.dot(x2, self.W2) + self.b2)
-        et = K.softmax(K.batch_dot(e1t, e2t, axes=(2, 2)))
-        # produce alignment matrices
+        et = K.softmax(K.batch_dot(e2t, e1t, axes=(2, 2)))
+        # align inputs
         # a1t, a2t: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         a1t = K.batch_dot(et, x2, axes=(1, 1))
         a2t = K.batch_dot(et, x1, axes=(2, 1))
-        # produce alignment vectors
-        # a1, a2: (BATCH_SIZE, EMBED_SIZE)
-        a1 = K.sum(a1t, axis=1)
-        a2 = K.sum(a2t, axis=1)
-        if mask is not None and mask[0] is not None:
-            a1 *= K.cast(mask, K.floatx())
-        if mask is not None and mask[1] is not None:
-            a1 *= K.cast(mask, K.floatx())
-#        # a1x, a2x: (BATCH_SIZE, EMBED_SIZE, 1)
-#        a1x = K.repeat_elements(K.expand_dims(a1, axis=1), self.max_timesteps, 
-#                                axis=1)
-#        a2x = K.repeat_elements(K.expand_dims(a2, axis=1), self.max_timesteps, 
-#                                axis=1)
+        # produce aligned outputs
         # o1t, o2t: (BATCH_SIZE, MAX_TIMESTEPS*2, EMBED_SIZE)
-        # Parikh paper uses concatenation, but we can add more parameters
-        # using the weights as shown below
-#        o1t = K.concatenate((x1, a2x), axis=1)
-#        o2t = K.concatenate((x2, a1x), axis=1)
-        o1t = K.expand_dims(K.dot(a1, self.U1), axis=-1) + K.dot(x1, self.V1)
-        o2t = K.expand_dims(K.dot(a2, self.U2), axis=-1) + K.dot(x2, self.V2)
+        o1t = K.relu(K.dot(x1, self.U1) + K.dot(a1t, self.V1) + self.b3)
+        o2t = K.relu(K.dot(x2, self.U2) + K.dot(a2t, self.V2) + self.b4)
+        if mask is not None and mask[0] is not None:
+            o1t *= K.cast(mask, K.floatx())
+        if mask is not None and mask[1] is not None:
+            o1t *= K.cast(mask, K.floatx())
         # o1, o2: (BATCH_SIZE, EMBED_SIZE)
-        o1 = K.sum(o1t, axis=1)
-        o2 = K.sum(o2t, axis=1)
+        o1 = K.mean(o1t, axis=1)
+        o2 = K.mean(o2t, axis=1)
         # merge the attention vectors according to merge_mode
         if self.merge_mode == "concat":
             return concatenate([o1, o2], axis=1)
