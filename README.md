@@ -13,11 +13,11 @@
       * [04c-ng-clf-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/04c-ng-clf-eeap.ipynb)
   * [Document Similarity Task](#document-similarity-task)
       * [05a-ng-sim-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/05a-ng-sim-eep.ipynb)
-      * [05a-ng-sim-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/05b-ng-sim-eeap.ipynb)
+      * [05b-ng-sim-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/05b-ng-sim-eeap.ipynb)
+      * [05c-ng-sim-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/05c-ng-sim-eeap.ipynb)
   * [Sentence Similarity Task](#sentence-similarity-task)
       * [07a-sts-sim-eep.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/07a-sts-sim-eep.ipynb)
       * [07b-sts-sim-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/07b-sts-sim-eeap.ipynb)
-      * [07c-sts-sim-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/07c-sts-sim-eeap.ipynb)
 
 
 ## Introduction
