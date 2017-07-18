@@ -63,6 +63,11 @@ class AttentionM(Layer):
         return (input_shape[0], input_shape[-1])
 
 
+    def get_config(self):
+        return super(AttentionM, self).get_config()
+
+
+
 class AttentionMC(Layer):
     
     """
@@ -124,6 +129,11 @@ class AttentionMC(Layer):
     def compute_output_shape(self, input_shape):
         # output shape: (BATCH_SIZE, EMBED_SIZE)
         return (input_shape[0], input_shape[-1])
+    
+    
+    def get_config(self):
+        return super(AttentionMC, self).get_config()
+
 
 
 class AttentionMV(Layer):
@@ -196,6 +206,11 @@ class AttentionMV(Layer):
     def compute_output_shape(self, input_shape):
         # output shape: (BATCH_SIZE, EMBED_SIZE)
         return (input_shape[0][0], input_shape[0][-1])
+    
+    
+    def get_config(self):
+        return super(AttentionMV, self).get_config()
+    
 
 
 class AttentionMM(Layer):
@@ -332,3 +347,8 @@ class AttentionMM(Layer):
             return (input_shape[0][0], input_shape[0][2])
             
 
+    def get_config(self):
+        config = {"merge_mode": self.merge_mode}
+        base_config = super(AttentionMM, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+    
