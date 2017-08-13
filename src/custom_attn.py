@@ -252,12 +252,10 @@ class AttentionMM(Layer):
         # b1: (MAX_TIMESTEPS, 1)
         # W2: (EMBED_SIZE, 1)
         # b2: (MAX_TIMESTEPS, 1)
-        # W3: (EMBED_SIZE, EMBED_SIZE)
-        # b3: (MAX_TIMESTEPS, EMBED_SIZE)
-        # W4: (EMBED_SIZE, EMBED_SIZE)
-        # b4: (MAX_TIMESTEPS, EMBED_SIZE)
-        # U1: (EMBED_SIZE, MAX_TIMESTEPS)
-        # U2: (EMBED_SIZE, MAX_TIMESTEPS)
+        # U1: (EMBED_SIZE, EMBED_SIZE)
+        # U2: (EMBED_SIZE, EMBED_SIZE)
+        # V1: (EMBED_SIZE, EMBED_SIZE)
+        # V2: (EMBED_SIZE, EMBED_SIZE)
         self.embed_size = input_shape[0][-1]
         self.max_timesteps = input_shape[0][1]
         self.W1 = self.add_weight(name="W1_{:s}".format(self.name),
@@ -284,12 +282,6 @@ class AttentionMM(Layer):
         self.V2 = self.add_weight(name="V2_{:s}".format(self.name),
                                   shape=(self.embed_size, self.embed_size),
                                   initializer="normal")
-        self.b3 = self.add_weight(name="b3_{:s}".format(self.name),
-                                  shape=(self.max_timesteps, self.embed_size),
-                                  initializer="zeros")
-        self.b4 = self.add_weight(name="b4_{:s}".format(self.name),
-                                  shape=(self.max_timesteps, self.embed_size),
-                                  initializer="zeros")
         super(AttentionMM, self).build(input_shape)
 
 
@@ -302,8 +294,8 @@ class AttentionMM(Layer):
         # build alignment matrix 
         # e1t, e2t: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
         # et: (BATCH_SIZE, MAX_TIMESTEPS, MAX_TIMESTEPS)
-        e1t = K.relu(K.dot(x1, self.W1) + self.b1)
-        e2t = K.relu(K.dot(x2, self.W2) + self.b2)
+        e1t = K.tanh(K.dot(x1, self.W1) + self.b1)
+        e2t = K.tanh(K.dot(x2, self.W2) + self.b2)
         et = K.softmax(K.batch_dot(e2t, e1t, axes=(2, 2)))
         # align inputs
         # a1t, a2t: (BATCH_SIZE, MAX_TIMESTEPS, EMBED_SIZE)
@@ -311,12 +303,17 @@ class AttentionMM(Layer):
         a2t = K.batch_dot(et, x1, axes=(2, 1))
         # produce aligned outputs
         # o1t, o2t: (BATCH_SIZE, MAX_TIMESTEPS*2, EMBED_SIZE)
-        o1t = K.relu(K.dot(x1, self.U1) + K.dot(a1t, self.V1) + self.b3)
-        o2t = K.relu(K.dot(x2, self.U2) + K.dot(a2t, self.V2) + self.b4)
+        o1t = K.tanh(K.dot(x1, self.U1) + K.dot(a1t, self.V1))
+        o2t = K.tanh(K.dot(x2, self.U2) + K.dot(a2t, self.V2))
+        # masking
         if mask is not None and mask[0] is not None:
-            o1t *= K.cast(mask, K.floatx())
+            o1t *= K.cast(K.repeat_elements(
+                K.expand_dims(mask[0], axis=2), o1t.shape[2], 2), 
+                K.floatx())
         if mask is not None and mask[1] is not None:
-            o1t *= K.cast(mask, K.floatx())
+            o2t *= K.cast(K.repeat_elements(
+                K.expand_dims(mask[1], axis=2), o2t.shape[2], 2), 
+                K.floatx())
         # o1, o2: (BATCH_SIZE, EMBED_SIZE)
         o1 = K.mean(o1t, axis=1)
         o2 = K.mean(o2t, axis=1)
