@@ -68,11 +68,11 @@ We built two models, one without attention at either the sentence or document la
 
 ### Sentence Similarity Task
 
-The Sentence Similarity task uses the Semantic Similarity Task dataset from 2012. The objective is to classify a pair of sentences into one of 5 different similarity ranges.
+The Sentence Similarity task uses the Semantic Similarity Task dataset from 2012. The objective is to classify a pair of sentences into a continuous scale of similarity from 0 to 5. We build a regression network as shown below. Our loss function is Mean Squared Error and Optimizer is RMSProp. Evaluation is done by computing the RMSE between the label similarity and the network predictions of the test set. In addition, we also compute the Pearson and Spearman (rank) correlations between the labels and predictions of the test set.
 
 <img src="docs/example-3.png"/>
 
-Experiments were done without attention at either level, with attention during the comparison phase, and with attention at both the sentence encoding and the comparison phases. Results are shown below:
+Our baseline is a hierarchical network that computes an encoding for each sentence in the pair, where the encodings without attention are used to generate the prediction. We compare the baseline to Matrix Matrix dot attention proposed by Parikh, et al where the inputs are scaled to \[-1, 1\] (MM-dot(s)). Next we compare with an unscaled version of this (MM-dot). Finally, we introduce two new attention implementations based on a description on [this Tensorflow NMT page](https://github.com/tensorflow/nmt) - specifically, an additive attention (MM-add) proposed by Bahdanau, et al, and a multiplicative attention (MM-mult) proposed by Luong, et al. Both operate on the encoder outputs without scaling via tanh. Results are shown below. As can be seen, the MM-add and MM-mult result in lower RMSE and generally higher Pearson and Spearman correlations than the baseline.
 
 <img src="docs/_results_3.png"/>
 
