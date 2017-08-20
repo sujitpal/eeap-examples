@@ -280,9 +280,6 @@ def test_attention_mm1(batch_size, word_embed_size, sent_embed_size,
                        num_classes, should_fit_model):
     """ AttentionMM """
 
-    def sum_over_axis(X, axis):
-        return K.mean(X, axis=axis)
-
     E = np.random.random((vocab_size, word_embed_size))
 
     # LHS sentence    
@@ -325,6 +322,144 @@ def test_attention_mm1(batch_size, word_embed_size, sent_embed_size,
 
     # attention
     doc_att = custom_attn.AttentionMM("concat")([doc_enc_left, doc_enc_right])
+
+    # prediction    
+    fc1_dropout = Dropout(0.2)(doc_att)
+    fc1 = Dense(50, activation="relu")(fc1_dropout)
+    fc2_dropout = Dropout(0.2)(fc1)
+    doc_pred = Dense(num_classes, activation="softmax")(fc2_dropout)
+
+    model = Model(inputs=[doc_in_left, doc_in_right], outputs=doc_pred)
+    model.summary()
+    
+    if should_fit_model:
+        Xleft = np.random.random((batch_size*2, max_sents, max_words))
+        Xright = np.random.random((batch_size*2, max_sents, max_words))
+        y = np.random.randint(0, num_classes, batch_size*2)
+        Y = np_utils.to_categorical(y, num_classes=num_classes)
+        model.compile(optimizer="adam", loss="categorical_crossentropy")
+        model.fit([Xleft, Xright], Y, batch_size=batch_size, epochs=1)
+
+    return
+
+
+def test_attention_mma1(batch_size, word_embed_size, sent_embed_size,
+                       doc_embed_size, vocab_size, max_words, max_sents,
+                       num_classes, should_fit_model):
+    
+    """ AttentionMMA: additive (Bahdanau) attention """
+
+    E = np.random.random((vocab_size, word_embed_size))
+
+    # LHS sentence    
+    sent_in_left = Input(shape=(max_words,), dtype="int32")
+    sent_emb_left = Embedding(input_dim=vocab_size,
+                              output_dim=word_embed_size,
+                              mask_zero=True,
+                              weights=[E])(sent_in_left)
+    sent_enc_left = Bidirectional(GRU(sent_embed_size,
+                                      return_sequences=False))(sent_emb_left)
+                                      
+    sent_model_left = Model(inputs=sent_in_left, outputs=sent_enc_left)                                      
+
+    # RHS sentence
+    sent_in_right = Input(shape=(max_words,), dtype="int32")
+    sent_emb_right = Embedding(input_dim=vocab_size,
+                               output_dim=word_embed_size,
+                               mask_zero=True,
+                               weights=[E])(sent_in_right)
+    sent_enc_right = Bidirectional(GRU(sent_embed_size,
+                                       return_sequences=False))(sent_emb_right)
+
+    sent_model_right = Model(inputs=sent_in_right, outputs=sent_enc_right)
+                                      
+    # LHS document
+    doc_in_left = Input(shape=(max_sents, max_words), dtype="int32")
+    
+    doc_emb_left = TimeDistributed(sent_model_left)(doc_in_left)
+
+    doc_enc_left = Bidirectional(GRU(doc_embed_size, 
+                                return_sequences=True))(doc_emb_left)
+    
+    # RHS document
+    doc_in_right = Input(shape=(max_sents, max_words), dtype="int32")
+    
+    doc_emb_right = TimeDistributed(sent_model_right)(doc_in_right)
+
+    doc_enc_right = Bidirectional(GRU(doc_embed_size, 
+                                return_sequences=True))(doc_emb_right)
+
+    # attention
+    doc_att = custom_attn.AttentionMMA("concat")([doc_enc_left, doc_enc_right])
+
+    # prediction    
+    fc1_dropout = Dropout(0.2)(doc_att)
+    fc1 = Dense(50, activation="relu")(fc1_dropout)
+    fc2_dropout = Dropout(0.2)(fc1)
+    doc_pred = Dense(num_classes, activation="softmax")(fc2_dropout)
+
+    model = Model(inputs=[doc_in_left, doc_in_right], outputs=doc_pred)
+    model.summary()
+    
+    if should_fit_model:
+        Xleft = np.random.random((batch_size*2, max_sents, max_words))
+        Xright = np.random.random((batch_size*2, max_sents, max_words))
+        y = np.random.randint(0, num_classes, batch_size*2)
+        Y = np_utils.to_categorical(y, num_classes=num_classes)
+        model.compile(optimizer="adam", loss="categorical_crossentropy")
+        model.fit([Xleft, Xright], Y, batch_size=batch_size, epochs=1)
+
+    return
+
+
+def test_attention_mmm1(batch_size, word_embed_size, sent_embed_size,
+                       doc_embed_size, vocab_size, max_words, max_sents,
+                       num_classes, should_fit_model):
+
+    """ AttentionMMM: multiplicative (Luong) attention """
+
+    E = np.random.random((vocab_size, word_embed_size))
+
+    # LHS sentence    
+    sent_in_left = Input(shape=(max_words,), dtype="int32")
+    sent_emb_left = Embedding(input_dim=vocab_size,
+                              output_dim=word_embed_size,
+                              mask_zero=True,
+                              weights=[E])(sent_in_left)
+    sent_enc_left = Bidirectional(GRU(sent_embed_size,
+                                      return_sequences=False))(sent_emb_left)
+                                      
+    sent_model_left = Model(inputs=sent_in_left, outputs=sent_enc_left)                                      
+
+    # RHS sentence
+    sent_in_right = Input(shape=(max_words,), dtype="int32")
+    sent_emb_right = Embedding(input_dim=vocab_size,
+                               output_dim=word_embed_size,
+                               mask_zero=True,
+                               weights=[E])(sent_in_right)
+    sent_enc_right = Bidirectional(GRU(sent_embed_size,
+                                       return_sequences=False))(sent_emb_right)
+
+    sent_model_right = Model(inputs=sent_in_right, outputs=sent_enc_right)
+                                      
+    # LHS document
+    doc_in_left = Input(shape=(max_sents, max_words), dtype="int32")
+    
+    doc_emb_left = TimeDistributed(sent_model_left)(doc_in_left)
+
+    doc_enc_left = Bidirectional(GRU(doc_embed_size, 
+                                return_sequences=True))(doc_emb_left)
+    
+    # RHS document
+    doc_in_right = Input(shape=(max_sents, max_words), dtype="int32")
+    
+    doc_emb_right = TimeDistributed(sent_model_right)(doc_in_right)
+
+    doc_enc_right = Bidirectional(GRU(doc_embed_size, 
+                                return_sequences=True))(doc_emb_right)
+
+    # attention
+    doc_att = custom_attn.AttentionMMM("concat")([doc_enc_left, doc_enc_right])
 
     # prediction    
     fc1_dropout = Dropout(0.2)(doc_att)
@@ -396,6 +531,16 @@ def run_tests():
     test_attention_mm1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
                        DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
                        2, SHOULD_FIT_MODEL)
+
+    print(test_attention_mma1.__doc__)
+    test_attention_mma1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
+                        DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
+                        2, SHOULD_FIT_MODEL)
+
+    print(test_attention_mmm1.__doc__)
+    test_attention_mmm1(BATCH_SIZE, WORD_EMBED_SIZE, SENT_EMBED_SIZE,
+                        DOC_EMBED_SIZE, VOCAB_SIZE, MAX_WORDS, MAX_SENTS,
+                        2, SHOULD_FIT_MODEL)
 
 
 if __name__ == "__main__":
