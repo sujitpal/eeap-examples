@@ -12,7 +12,6 @@ LABELS = {
 }
 YLABEL = {
     "c": "accuracy",
-    "r": None
 }
 LABEL_TYPE = "c"
 
