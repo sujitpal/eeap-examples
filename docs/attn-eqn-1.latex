@@ -1,0 +1,9 @@
+\begin{align*}
+\alpha &= softmax(score(h_1, h_2))
+\\
+score(h_1, h_2) &= \left\{\begin{matrix}
+h_1 \cdot h_2 & (dot, Parikh) \\ 
+V \cdot tanh(W \cdot [h_1; h_2]) & (additive, Bahdanau) \\
+h_1^T \cdot W \cdot h_2 & (multiplicative, Luong) 
+\end{matrix}\right.
+\end{align*}

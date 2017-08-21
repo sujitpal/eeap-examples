@@ -1,0 +1,5 @@
+\begin{matrix}
+c_1 = \sum_t \alpha  h_2 & c_2 = \sum_t \alpha^T  h_1 \\
+o_1 = tanh(W[h_1; c_1]) & o_2 = tanh(W[h_2; c_2])
+\end{matrix}
+

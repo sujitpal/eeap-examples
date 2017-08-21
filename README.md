@@ -17,7 +17,9 @@
       * [05c-ng-sim-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/05c-ng-sim-eeap.ipynb)
   * [Sentence Similarity Task](#sentence-similarity-task)
       * [07a-sts-sim-eep.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/07a-sts-sim-eep.ipynb)
-      * [07b-sts-sim-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/07b-sts-sim-eeap.ipynb)
+      * [07ba-sts-sim-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/07ba-sts-sim-eeap.ipynb)
+      * [07bb-sts-sim-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/07bb-sts-sim-eeap.ipynb)
+      * [07bc-sts-sim-eeap.ipynb](https://github.com/sujitpal/eeap-examples/blob/master/src/07bc-sts-sim-eeap.ipynb)
 
 
 ## Introduction
