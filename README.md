@@ -32,6 +32,8 @@ Code is in Python. All models are built using the awesome [Keras](https://keras.
 
 The examples use 4 custom Attention layers, also available here as a Python include file. The examples themselves are written as [Jupyter notebooks](http://jupyter.org/).
 
+A good complete implementation of attention can be found [here](https://github.com/wballard/mailscanner/blob/attention/mailscanner/layers/attention.py).
+
 
 ## Data
 
@@ -77,4 +79,5 @@ The Sentence Similarity task uses the Semantic Similarity Task dataset from 2012
 Our baseline is a hierarchical network that computes an encoding for each sentence in the pair, where the encodings without attention are used to generate the prediction. We compare the baseline to Matrix Matrix dot attention proposed by Parikh, et al where the inputs are scaled to \[-1, 1\] (MM-dot(s)). Next we compare with an unscaled version of this (MM-dot). Finally, we introduce two new attention implementations based on a description on [this Tensorflow NMT page](https://github.com/tensorflow/nmt) - specifically, an additive attention (MM-add) proposed by Bahdanau, et al, and a multiplicative attention (MM-mult) proposed by Luong, et al. Both operate on the encoder outputs without scaling via tanh. Results are shown below. As can be seen, the MM-add and MM-mult result in lower RMSE and generally higher Pearson and Spearman correlations than the baseline.
 
 <img src="docs/_results_3.png"/>
+
 
